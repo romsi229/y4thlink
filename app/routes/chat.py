@@ -90,8 +90,19 @@ async def whatsapp(request: Request):
             reponse_texte = lang.get("conseiller", lang.get("counselor"))
         else:
             reponse_texte = lang["accueil"]
-        xml = f"{reponse_texte}"
-        return Response(content=xml, media_type="application/xml")
+
+        xml = f"""
+
+    
+        {reponse_texte}
+    
+"""
+        return Response(content=xml, media_type="text/xml")
     except Exception as e:
-        xml = "Y4thLink est disponible. Tape bonjour pour commencer."
-        return Response(content=xml, media_type="application/xml")
+        xml = f"""
+
+    
+        Y4thLink disponible. Tape bonjour pour commencer.
+    
+"""
+        return Response(content=xml, media_type="text/xml")
