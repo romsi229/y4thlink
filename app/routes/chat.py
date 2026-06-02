@@ -66,14 +66,32 @@ def chat(message: str, langue: str = "fr"):
 
 @router.post("/whatsapp")
 async def whatsapp(request: Request):
-    form = await request.form()
-    msg = form.get("Body", "bonjour").lower().strip()
-    langue = "fr"
-    if any(w in msg for w in ["hello", "hi", "appointment", "clinic", "counselor"]):
-        langue = "en"
-    result = chat(message=msg, langue=langue)
-    import json
-    data = json.loads(result.body.decode())
-    reponse_texte = data["reponse"]
-    xml = f"{reponse_texte}"
-    return Response(content=xml, media_type="application/xml")
+    try:
+        form = await request.form()
+        msg = form.get("Body", "bonjour").lower().strip()
+        langue = "fr"
+        if any(w in msg for w in ["hello", "hi", "appointment", "clinic", "counselor"]):
+            langue = "en"
+        lang = reponses.get(langue, reponses["fr"])
+        if msg in ["bonjour", "salut", "hello", "hi", "start"]:
+            reponse_texte = lang["accueil"]
+        elif msg == "info":
+            reponse_texte = lang["info"]
+        elif msg in ["contraception", "pilule"]:
+            reponse_texte = lang.get("contraception", lang["info"])
+        elif msg in ["grossesse", "pregnancy"]:
+            reponse_texte = lang.get("grossesse", lang.get("pregnancy", lang["info"]))
+        elif msg in ["rdv", "appointment"]:
+            code = generer_code()
+            reponse_texte = f"Ton code prive : {code}. Montre ce code a la clinique. Aucun nom enregistre."
+        elif msg in ["clinique", "clinic"]:
+            reponse_texte = lang["clinique"]
+        elif msg in ["conseiller", "counselor"]:
+            reponse_texte = lang.get("conseiller", lang.get("counselor"))
+        else:
+            reponse_texte = lang["accueil"]
+        xml = f"{reponse_texte}"
+        return Response(content=xml, media_type="application/xml")
+    except Exception as e:
+        xml = "Y4thLink est disponible. Tape bonjour pour commencer."
+        return Response(content=xml, media_type="application/xml")
