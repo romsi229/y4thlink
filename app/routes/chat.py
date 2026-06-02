@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+from fastapi import Request
+from fastapi.responses import Response
 from fastapi.responses import JSONResponse
 import random
 import string
@@ -60,3 +62,18 @@ def chat(message: str, langue: str = "fr"):
         content={"reponse": reponse},
         media_type="application/json; charset=utf-8"
     )
+
+
+@router.post("/whatsapp")
+async def whatsapp(request: Request):
+    form = await request.form()
+    msg = form.get("Body", "bonjour").lower().strip()
+    langue = "fr"
+    if any(w in msg for w in ["hello", "hi", "appointment", "clinic", "counselor"]):
+        langue = "en"
+    result = chat(message=msg, langue=langue)
+    import json
+    data = json.loads(result.body.decode())
+    reponse_texte = data["reponse"]
+    xml = f"{reponse_texte}"
+    return Response(content=xml, media_type="application/xml")
