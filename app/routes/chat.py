@@ -1,6 +1,4 @@
 from fastapi import APIRouter
-from fastapi import Request
-from fastapi.responses import Response
 from fastapi.responses import JSONResponse
 import random
 import string
@@ -62,51 +60,3 @@ def chat(message: str, langue: str = "fr"):
         content={"reponse": reponse},
         media_type="application/json; charset=utf-8"
     )
-
-
-@router.post("/whatsapp")
-async def whatsapp(request: Request):
-    try:
-        from twilio.rest import Client
-        import os
-        
-        form = await request.form()
-        msg = form.get("Body", "bonjour").lower().strip()
-        expediteur = form.get("From", "")
-        
-        langue = "fr"
-        if any(w in msg for w in ["hello", "hi", "appointment", "clinic", "counselor"]):
-            langue = "en"
-        
-        lang = reponses.get(langue, reponses["fr"])
-        
-        if msg in ["bonjour", "salut", "hello", "hi", "start"]:
-            reponse_texte = lang["accueil"]
-        elif msg == "info":
-            reponse_texte = lang["info"]
-        elif msg in ["contraception", "pilule"]:
-            reponse_texte = lang.get("contraception", lang["info"])
-        elif msg in ["grossesse", "pregnancy"]:
-            reponse_texte = lang.get("grossesse", lang.get("pregnancy", lang["info"]))
-        elif msg in ["rdv", "appointment"]:
-            code = generer_code()
-            reponse_texte = f"Ton code prive : {code}. Montre ce code a la clinique. Aucun nom enregistre."
-        elif msg in ["clinique", "clinic"]:
-            reponse_texte = lang["clinique"]
-        elif msg in ["conseiller", "counselor"]:
-            reponse_texte = lang.get("conseiller", lang.get("counselor"))
-        else:
-            reponse_texte = lang["accueil"]
-
-        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-        client = Client(account_sid, auth_token)
-        client.messages.create(
-            from_="whatsapp:+14155238886",
-            body=reponse_texte,
-            to=expediteur
-        )
-        return Response(content="OK", status_code=200)
-    except Exception as e:
-        print(f"Erreur whatsapp: {e}")
-        return Response(content="OK", status_code=200)
