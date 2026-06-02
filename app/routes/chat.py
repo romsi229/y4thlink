@@ -67,12 +67,19 @@ def chat(message: str, langue: str = "fr"):
 @router.post("/whatsapp")
 async def whatsapp(request: Request):
     try:
+        from twilio.rest import Client
+        import os
+        
         form = await request.form()
         msg = form.get("Body", "bonjour").lower().strip()
+        expediteur = form.get("From", "")
+        
         langue = "fr"
         if any(w in msg for w in ["hello", "hi", "appointment", "clinic", "counselor"]):
             langue = "en"
+        
         lang = reponses.get(langue, reponses["fr"])
+        
         if msg in ["bonjour", "salut", "hello", "hi", "start"]:
             reponse_texte = lang["accueil"]
         elif msg == "info":
@@ -91,18 +98,15 @@ async def whatsapp(request: Request):
         else:
             reponse_texte = lang["accueil"]
 
-        xml = f"""
-
-    
-        {reponse_texte}
-    
-"""
-        return Response(content=xml, media_type="text/xml")
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+        client = Client(account_sid, auth_token)
+        client.messages.create(
+            from_="whatsapp:+14155238886",
+            body=reponse_texte,
+            to=expediteur
+        )
+        return Response(content="OK", status_code=200)
     except Exception as e:
-        xml = f"""
-
-    
-        Y4thLink disponible. Tape bonjour pour commencer.
-    
-"""
-        return Response(content=xml, media_type="text/xml")
+        print(f"Erreur whatsapp: {e}")
+        return Response(content="OK", status_code=200)
