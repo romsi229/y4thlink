@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Y4thLink</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { width: 100%; max-width: 420px; padding: 16px; }
+    .header { background: #128C7E; color: white; padding: 16px; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 40px; height: 40px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; }
+    .header-info h1 { font-size: 16px; }
+    .header-info p { font-size: 12px; opacity: 0.85; }
+    .lang-bar { background: #f0f0f0; padding: 8px; display: flex; gap: 6px; border-left: 1px solid #ddd; border-right: 1px solid #ddd; }
+    .lang-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; font-size: 12px; cursor: pointer; }
+    .lang-btn.active { background: #128C7E; color: white; border-color: #128C7E; }
+    .messages { background: #e5ddd5; padding: 12px; height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+    .msg.bot { background: white; align-self: flex-start; border-radius: 0 8px 8px 8px; }
+    .msg.user { background: #dcf8c6; align-self: flex-end; border-radius: 8px 0 8px 8px; }
+    .options { background: #f0f0f0; padding: 8px; display: flex; flex-direction: column; gap: 6px; border-left: 1px solid #ddd; border-right: 1px solid #ddd; }
+    .opt-btn { background: #128C7E; color: white; border: none; padding: 10px; border-radius: 20px; font-size: 13px; cursor: pointer; text-align: left; }
+    .opt-btn:hover { background: #0f7066; }
+    .input-bar { background: #f0f0f0; padding: 8px; display: flex; gap: 8px; border-radius: 0 0 12px 12px; border: 1px solid #ddd; border-top: none; }
+    .input-bar input { flex: 1; padding: 8px 14px; border-radius: 20px; border: 1px solid #ccc; font-size: 14px; outline: none; }
+    .input-bar button { background: #128C7E; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="avatar">Y4</div>
+      <div class="header-info">
+        <h1>Y4thLink</h1>
+        <p>Confidentiel & privé • SRSR</p>
+      </div>
+    </div>
+
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="setLang('fr', this)">🇫🇷 Français</button>
+      <button class="lang-btn" onclick="setLang('en', this)">🇬🇧 English</button>
+      <button class="lang-btn" onclick="setLang('fon', this)">Fon</button>
+      <button class="lang-btn" onclick="setLang('yo', this)">Yoruba</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+    <div class="options" id="options"></div>
+
+    <div class="input-bar">
+      <input id="input" type="text" placeholder="Écris un message..." />
+      <button onclick="envoyer()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    let langue = 'fr';
+
+    const menus = {
+      fr: [
+        { label: "ℹ️ Informations SRSR", msg: "info" },
+        { label: "📅 Prendre un RDV", msg: "rdv" },
+        { label: "🏥 Trouver une clinique", msg: "clinique" },
+        { label: "💬 Parler à un conseiller", msg: "conseiller" }
+      ],
+      en: [
+        { label: "ℹ️ SRHR Information", msg: "info" },
+        { label: "📅 Book appointment", msg: "appointment" },
+        { label: "🏥 Find a clinic", msg: "clinic" },
+        { label: "💬 Talk to counselor", msg: "counselor" }
+      ],
+      fon: [
+        { label: "ℹ️ SRSR Xóxó", msg: "info" },
+        { label: "📅 Bló kpinkpan", msg: "rdv" },
+        { label: "🏥 Mɔ azɔwanú xá", msg: "clinique" },
+        { label: "💬 Ðó xó xá mɛɖé", msg: "conseiller" }
+      ],
+      yo: [
+        { label: "ℹ️ Ìmọ̀ SRHR", msg: "info" },
+        { label: "📅 Ṣe àpéjọ", msg: "appointment" },
+        { label: "🏥 Wá ilé-ìwòsàn", msg: "clinic" },
+        { label: "💬 Bá olùgbọ́ sọ̀rọ̀", msg: "counselor" }
+      ]
+    };
+
+    function ajouterMsg(texte, type) {
+      const ms = document.getElementById('messages');
+      const d = document.createElement('div');
+      d.className = 'msg ' + type;
+      d.innerHTML = texte.replace(/\n/g, '<br>');
+      ms.appendChild(d);
+      ms.scrollTop = ms.scrollHeight;
+    }
+
+    function afficherMenu() {
+      const o = document.getElementById('options');
+      o.innerHTML = '';
+      menus[langue].forEach(item => {
+        const b = document.createElement('button');
+        b.className = 'opt-btn';
+        b.textContent = item.label;
+        b.onclick = () => envoyerMsg(item.msg, item.label);
+        o.appendChild(b);
+      });
+    }
+
+    async function envoyerMsg(msg, affichage) {
+      ajouterMsg(affichage || msg, 'user');
+      const res = await fetch(`/chat?message=${encodeURIComponent(msg)}&langue=${langue}`);
+      const data = await res.json();
+      ajouterMsg(data.reponse, 'bot');
+    }
+
+    function envoyer() {
+      const inp = document.getElementById('input');
+      const val = inp.value.trim();
+      if (!val) return;
+      inp.value = '';
+      envoyerMsg(val, val);
+    }
+
+    function setLang(l, el) {
+      langue = l;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('messages').innerHTML = '';
+      document.getElementById('input').placeholder = l === 'en' ? 'Type a message...' : 'Écris un message...';
+      afficherMenu();
+      envoyerMsg('bonjour', '👋');
+    }
+
+    afficherMenu();
+    envoyerMsg('bonjour', '👋');
+  </script>
+</body>
+</html>
